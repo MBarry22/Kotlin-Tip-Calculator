@@ -18,6 +18,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import java.text.NumberFormat
@@ -43,16 +44,19 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun TipCalculatorScreen() {
     var serviceCostAmountInput by remember { mutableStateOf("") }
-    var tipPercent by remember { mutableStateOf(15.0) }
+    var tipPercent by remember { mutableStateOf(15) }
+
     val amount = serviceCostAmountInput.toDoubleOrNull() ?: 0.0
     val tip = calculateTip(amount, tipPercent)
+    val total = amount + tip
+
     Column(
         modifier = Modifier.padding(32.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         Button(
             onClick = { serviceCostAmountInput = (1..1000).random().toString() },
-            modifier = Modifier.align(Alignment.End)
+            modifier = Modifier.align(Alignment.CenterHorizontally)
         ) {
             Text(text = "Generate Bill Amount")
         }
@@ -67,22 +71,45 @@ fun TipCalculatorScreen() {
             onValueChange = { serviceCostAmountInput = it }
         )
         Spacer(Modifier.height(16.dp))
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            TipButton(percent = 10, tipPercent = tipPercent, onClick = { tipPercent = 10 })
+            TipButton(percent = 15, tipPercent = tipPercent, onClick = { tipPercent = 15 })
+            TipButton(percent = 20, tipPercent = tipPercent, onClick = { tipPercent = 20 })
+            TipButton(percent = 25, tipPercent = tipPercent, onClick = { tipPercent = 25 })
+        }
+        Spacer(Modifier.height(16.dp))
+        Divider( thickness = 1.dp, color = MaterialTheme.colors.onBackground)
         Text(
-            text = stringResource(R.string.tip_amount, tip),
-            modifier = Modifier.align(Alignment.CenterHorizontally),
-            fontSize = 20.sp,
+            text = stringResource(R.string.tip_amount, formatCurrency(tip)),
+            fontSize = 18.sp,
             fontWeight = FontWeight.Bold
         )
-        Spacer(Modifier.height(16.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            TipPercentageButton(10.0, tipPercent, onTipPercentageChanged = { tipPercent = it })
-            TipPercentageButton(15.0, tipPercent, onTipPercentageChanged = { tipPercent = it })
-            TipPercentageButton(20.0, tipPercent, onTipPercentageChanged = { tipPercent = it })
-            TipPercentageButton(25.0, tipPercent, onTipPercentageChanged = { tipPercent = it })
-        }
+        Text(
+            text = stringResource(R.string.total_amount, formatCurrency(total)),
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+fun TipButton(percent: Int, tipPercent: Int, onClick: () -> Unit) {
+    Button(
+        onClick = onClick,
+        colors = ButtonDefaults.buttonColors(
+            backgroundColor = if (tipPercent == percent) MaterialTheme.colors.primary else Color.Black,
+            contentColor = if (tipPercent == percent) MaterialTheme.colors.onPrimary else Color.White
+        ),
+        modifier = Modifier.size(64.dp)
+    ) {
+        Text(
+            text = "$percent%",
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold
+        )
     }
 }
 
@@ -104,41 +131,16 @@ fun EditServiceCostField(
 
 private fun calculateTip(
     amount: Double,
-    tipPercent: Double = 15.0
-): String {
-    val tip = tipPercent / 100 * amount
-    return NumberFormat.getCurrencyInstance().format(tip)
+    tipPercent: Int = 15
+): Double {
+    return amount * tipPercent / 100
 }
 
-@Composable
-fun TipPercentageButton(
-    tipPercent: Double,
-    currentTipPercent: Double,
-    onTipPercentageChanged: (Double) -> Unit
-) {
-    Button(
-        onClick = { onTipPercentageChanged(tipPercent) },
-        colors = ButtonDefaults.buttonColors(
-            backgroundColor = if (tipPercent == currentTipPercent) {
-                MaterialTheme.colors.secondary
-            } else {
-                MaterialTheme.colors.primary
-            }
-        ),
-        contentPadding = PaddingValues(16.dp)
-    ) {
-        Text(
-            text = "${tipPercent.toInt()}%",
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Bold,
-            color = if (tipPercent == currentTipPercent) {
-                MaterialTheme.colors.onSecondary
-            } else {
-                MaterialTheme.colors.onPrimary
-            }
-        )
-    }
+private fun formatCurrency(amount: Double): String {
+    return NumberFormat.getCurrencyInstance().format(amount)
 }
+
+
 
 @Preview(showBackground = true)
 @Composable
